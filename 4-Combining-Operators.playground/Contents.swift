@@ -51,4 +51,4 @@ innerPublisher1.send(4)
 outerPublisher.send(AnyPublisher(innerPublisher2))
 innerPublisher2.send(10)
 
-innerPublisher1.send(100) // This wont be work as innerpublisher2 is currently assigned.
+innerPublisher1.send(100) // This wont work as innerpublisher2 is currently assigned.
