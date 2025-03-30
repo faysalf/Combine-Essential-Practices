@@ -12,6 +12,10 @@ import Combine
   }
 */
 
+enum NetworkError: Error {
+    case httpError
+}
+
 struct PostModel: Codable {
     let userId: Int
     let id: Int
@@ -22,11 +26,20 @@ struct PostModel: Codable {
 typealias PostsModel = [PostModel]
 
 func fetchPost() -> AnyPublisher<PostsModel, Error> {
-    let url = URL(string: "https://jsonplaceholder.typicode.com/posts")!
+    let url = URL(string: "https://jsonplaceholder.typicode.com/postss")! //working url: "https://jsonplaceholder.typicode.com/posts"
     
     return URLSession.shared.dataTaskPublisher(for: url)
-        .map(\.data)
+        //.map(\.data)                  // For regular use
+        .tryMap{ (data, response) in    // For handling error
+            print("Retries ")
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                throw NetworkError.httpError
+            }
+            return data
+        }
         .decode(type: PostsModel.self, decoder: JSONDecoder())
+        .retry(3)                       // for retrying 3 times if any error occures
         .receive(on: DispatchQueue.main)
         .eraseToAnyPublisher()
     
