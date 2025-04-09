@@ -11,10 +11,23 @@ import Combine
 
 class MoviesViewController: UIViewController {
     
+    private let viewModel: MoviesViewModel
+    private var cancellables: Set<AnyCancellable> = []
+
+    init(viewModel: MoviesViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     lazy var searchBar: UISearchBar = {
         let searchBar = UISearchBar()
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         searchBar.placeholder = "Search"
+        searchBar.delegate = self
         return searchBar
     }()
         
@@ -29,8 +42,16 @@ class MoviesViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        searchBar.delegate = self
         setupUI()
+        
+        viewModel.$loadingCompleted
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] completed in
+                if completed {
+                    self?.moviesTableView.reloadData()
+                }
+            }
+            .store(in: &cancellables)
         
     }
         
@@ -61,24 +82,30 @@ class MoviesViewController: UIViewController {
     }
 }
 
+// MARK: - Table view delegate
 extension MoviesViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        10
+        viewModel.movies.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "MovieTableViewCell", for: indexPath)
         var content = cell.defaultContentConfiguration()
-        content.text = "Hello World"
+        content.text = viewModel.movies[indexPath.row].title
         cell.contentConfiguration = content
+        
         return cell
     }
 }
 
+// MARK: - Search bar delegate
 extension MoviesViewController: UISearchBarDelegate {
     
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        viewModel.setSearchText(searchText)
+    }
 }
 
 struct MoviesViewControllerRepresentable: UIViewControllerRepresentable {
@@ -90,7 +117,7 @@ struct MoviesViewControllerRepresentable: UIViewControllerRepresentable {
     }
     
     func makeUIViewController(context: Context) -> MoviesViewController {
-        MoviesViewController()
+        MoviesViewController(viewModel: MoviesViewModel(httpClient: HTTPClient()))
     }
 }
 
