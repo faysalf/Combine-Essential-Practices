@@ -25,6 +25,9 @@ class HTTPClient {
             .map(\.data)
             .decode(type: MoviesModels.self, decoder: JSONDecoder())
             .map(\.Search)
+            .breakpoint(receiveOutput: { movies in
+                movies.isEmpty     // Debugging: if true, it will break the code
+            })
             .receive(on: DispatchQueue.main)
             .catch { error -> AnyPublisher<[Movie], Error> in
                 return Just([])                     // Publisher<[Movie], Never>
