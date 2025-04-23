@@ -17,7 +17,7 @@ class HTTPClient {
     func fetchMovies(query: String) -> AnyPublisher<[Movie], Error> {
         
         guard let encodedQuery = query.urlEncoded,
-              let url = URL(string: "https://www.omdbapi.com/?s=\(encodedQuery)&page=2&apiKey=564727fa")
+              let url = URL(string: "https://www.omdbapi.com/?s=\(encodedQuery)&page=2&apiKey=98145e70")
         else {
             return Fail(error: NetworkError.badURL).eraseToAnyPublisher()
         }
